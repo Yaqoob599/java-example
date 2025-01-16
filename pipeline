@@ -1,0 +1,58 @@
+pipeline {
+    agent any
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner' // Ensure 'sonar-scanner' tool is correctly configured in Jenkins
+    }
+
+    options {
+        skipStagesAfterUnstable() // Skip subsequent stages if a stage is unstable
+        timestamps() // Add timestamps to pipeline logs for better debugging
+    }
+
+    stages {
+        stage('Checkout Source Code') {
+            steps {
+                // Ensure a full clone to avoid shallow clone issues
+                checkout([
+                    $class: 'GitSCM', 
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/Yaqoob599/java-example.git']],
+                    extensions: [[$class: 'CloneOption', noTags: false, shallow: false]]
+                ])
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh "mvn clean test" // Clean before test to avoid stale outputs
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar-scanner') {
+                    sh ''' 
+                        $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=Java-app \
+                        -Dsonar.projectKey=Java-app \
+                        -Dsonar.scm.provider=git \
+                        -Dsonar.java.binaries=target/classes \
+                        -Dsonar.verbose=true
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline completed"
+        }
+        success {
+            echo "Build and analysis completed successfully"
+        }
+        failure {
+            echo "Pipeline failed"
+        }
+    }
+}
