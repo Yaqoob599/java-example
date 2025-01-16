@@ -7,7 +7,7 @@ pipeline {
     stages {
         stage('Checkout Source Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Yaqoob599/spring-security-jwt-example.git/'
+                git branch: 'main', url: 'https://github.com/Yaqoob599/java-example.git'
             }
         }
         
