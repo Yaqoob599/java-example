@@ -16,12 +16,12 @@ pipeline {
                 sh "mvn test"
             }
         }
-        stage('SonarQube Analsyis') {
-            steps {
-                withSonarQubeEnv('sonar-scanner') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Java-app -Dsonar.projectKey=Java-app \
-                            -Dsonar.java.binaries=. '''
-                }
+        stage ('sonar analysis'){
+            steps{
+                sh 'mvn clean verify sonar:sonar \
+                      -Dsonar.projectKey=cicd-deploy \
+                      -Dsonar.host.url=http://15.206.94.130:9000 \
+                      -Dsonar.login=squ_52adeabc24df0c7bff0d7faa18d3bbd2527f5c66'
             }
         }
     }
