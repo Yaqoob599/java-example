@@ -1,25 +1,28 @@
 pipeline {
-	agent any 	
-	stages {
-		stage('Checkout') {
-			steps {
-				echo 'Checkout completed'
-			}
-		}
-		stage('Static-test') {
-			steps {
-				echo 'Running static tests on code'
-			}
-		}
-		stage('Build') {
-			steps {
-				sh 'echo "Building the code"'
-			}
-		}
-		stage('Deploy') {
-			steps {
-				echo 'Deploying into environment'
-			}
-		}
-	}
+    agent any
+    environment {
+        SCANNER_HOME= tool 'sonar-scanner'
+    }
+
+    stages {
+        stage('Checkout Source Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Yaqoob599/spring-security-jwt-example.git/'
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                sh "mvn test"
+            }
+        }
+        stage('SonarQube Analsyis') {
+            steps {
+                withSonarQubeEnv('sonar-scanner') {
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Java-app -Dsonar.projectKey=Java-app \
+                            -Dsonar.java.binaries=. '''
+                }
+            }
+        }
+    }
 }
