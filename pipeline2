@@ -1,15 +1,22 @@
+
+
 pipeline {
     agent any
     environment {
-        REPOSITORY_URI = "515966525347.dkr.ecr.ap-south-1.amazonaws.com/assignment"
-		SCANNER_HOME= tool 'sonar-scanner'
+        AWS_ACCOUNT_ID = "140023400586"
+        AWS_DEFAULT_REGION = "ap-south-1"
+        IMAGE_REPO_NAME = "docker-pipeline"
+        IMAGE_TAG = "B1"
+        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/dec-2025"
+		    SCANNER_HOME= tool 'sonar-scanner'
     }
     stages {
         stage('Checkout Source Code') {
             steps {
-                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/Yaqoob599/java-example.git'
+                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/Yaqoob599/docker-multistagebuild-java.git'
             }
         }
+      
 		stage('building artifact and unit testing'){
 		    steps{
 			    sh 'mvn clean package'
@@ -28,25 +35,23 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh """
-                    docker build -t ubuntu:v1 .
+                    docker build -t ${IMAGE_REPO_NAME}:${IMAGE_TAG} .
                 """
             }
         }
         stage('Push to AWS ECR') {
             steps {
                 script {
-                    withEnv(["AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID}", "AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY}", "AWS_DEFAULT_REGION=${env.AWS_DEFAULT_REGION}"])
-{
                     sh """
-                        aws ecr get-login-password --region ap-south-1 | \
-                        docker login --username AWS --password-stdin 515966525347.dkr.ecr.ap-south-1.amazonaws.com
-                        docker tag ubuntu:v1 ${REPOSITORY_URI}:v1
-                        docker push ${REPOSITORY_URI}:v1
+                        aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | \
+                        docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
+                        docker tag ${IMAGE_REPO_NAME}:${IMAGE_TAG} ${REPOSITORY_URI}:${IMAGE_TAG}
+                        docker push ${REPOSITORY_URI}:${IMAGE_TAG}
                     """
                 }
-}
             }
-        }
+          }
+        
 
         stage('deplyoing to kubernetes'){
 		    steps{
